@@ -1,6 +1,47 @@
 Vagrant.configure(2) do |config|
+# Set some variables
 
-  etcHosts = ""
+        etcHosts = ""
+	ingressNginx = ""
+	wordpress = ""
+	wordpressUrl = "wordpress.kub"
+
+# Check ingress controller
+	case ARGV[0]
+		when "provision", "up"
+  	print "Do you want nginx as ingress controller (y/n) ?\n"
+  	ingressNginx = STDIN.gets.chomp
+  	print "\n"
+
+  if ingressNginx == "y"
+	  print "Do you want a wordpress in your kubernetes cluster (y/n) ?\n"
+  	wordpress = STDIN.gets.chomp
+  	print "\n"
+
+		# check if wordpress
+  	if wordpress == "y"
+ 			print "Which url for your wordpress ?"
+  		wordpressUrl = STDIN.gets.chomp
+     	unless wordpressUrl.empty? then wordpressUrl else 'wordpress.url' end
+		end
+	end
+	else
+  	# do nothing
+	end
+# some settings for common server (not for haproxy)
+  common = <<-SHELL
+  sudo apt update -qq 2>&1 >/dev/null
+  sudo apt install -y -qq git vim tree net-tools telnet git python3-pip sshpass nfs-common 2>&1 >/dev/null
+  curl -fsSL https://get.docker.com -o get-docker.sh 2>&1
+  sudo sh get-docker.sh 2>&1 >/dev/null
+  sudo usermod -aG docker vagrant
+  sudo service docker start
+  sudo echo "autocmd filetype yaml setlocal ai ts=2 sw=2 et" > /home/vagrant/.vimrc
+  sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/g' /etc/ssh/sshd_config
+  sudo systemctl restart sshd
+  SHELL  
+
+
 
 	config.vm.box = "ubuntu/bionic64"
 	config.vm.box_url = "ubuntu/bionic64"
