@@ -39,7 +39,7 @@ Vagrant.configure(2) do |config|
   sudo echo "autocmd filetype yaml setlocal ai ts=2 sw=2 et" > /home/vagrant/.vimrc
   sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/g' /etc/ssh/sshd_config
   sudo systemctl restart sshd
-  SHELL  
+  SHELL
 
 
 
@@ -76,8 +76,27 @@ Vagrant.configure(2) do |config|
         v.customize ["modifyvm", :id, "--name", node[:hostname] ]
       end #end provider
 			
-			#for all
-      cfg.vm.provision :shell, :inline => etcHosts
+      #for all
+         cfg.vm.provision :shell, :inline => etcHosts
+      #for haproxy
+      if node[:type] == "haproxy"
+	 cfg.vm.provision :shell, :path => "install_haproxy.sh"
+      end
+     
+      # for all servers in cluster (need docker)
+      if node[:type] == "kub"
+	 cfg.vm.provision :shell, :inline => common
+      end
+
+      # for the deploy server
+      if node[:type] == "deploy"
+	 cfg.vm.provision :shell, :inline => common
+	 cfg.vm.provision :shell, :path => "install_kubespray.sh", :args => ingressNginx
+         if wordpress == "y"
+            cfg.vm.provision :shell, :path => "install_nfs.sh"
+            cfg.vm.provision :shell, :path => "install_wordpress.sh", :args => wordpressUrl
+	end
+      end
     end # end config
   end # end nodes
 end 
